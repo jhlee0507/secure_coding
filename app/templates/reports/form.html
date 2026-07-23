@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}신고{% endblock %}
+{% block content %}
+<section class="form-card narrow"><p class="eyebrow">REPORT</p><h1>{{ "사용자" if target_type == "user" else "상품" }} 신고</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="target_type" value="{{ target_type }}"><input type="hidden" name="target_id" value="{{ target_id }}">
+    <label>신고 사유<textarea name="reason" required minlength="10" maxlength="500" rows="7"></textarea><small>관리자가 판단할 수 있도록 구체적으로 작성하세요.</small></label>
+    <button class="button danger" type="submit">신고 접수</button>
+  </form>
+</section>
+{% endblock %}
+

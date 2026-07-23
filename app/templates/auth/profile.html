@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}프로필{% endblock %}
+{% block content %}
+<section class="form-card"><p class="eyebrow">{{ g.user.username }}</p><h1>프로필</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>자기소개<textarea name="bio" rows="6" maxlength="500">{{ g.user.bio }}</textarea></label>
+    <button class="button" type="submit">저장</button>
+  </form>
+</section>
+{% endblock %}
+

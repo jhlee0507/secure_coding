@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}지갑{% endblock %}
+{% block content %}
+<div class="section-heading"><div><p class="eyebrow">DEMO WALLET</p><h1>내 지갑</h1></div><div class="balance">{{ "{:,}".format(g.user.balance) }} P</div></div>
+<div class="notice">이 지갑은 수업용 가상 포인트입니다. 실제 결제·입출금 기능이 아닙니다.</div>
+<section class="form-card"><h2>포인트 보내기</h2>
+  <form method="post" action="{{ url_for('wallet.transfer') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>받는 사용자명<input name="receiver" required minlength="3" maxlength="20" autocomplete="off"></label>
+    <label>금액<input type="number" name="amount" required min="1" max="10000000"></label>
+    <label>현재 비밀번호<input type="password" name="password" required maxlength="128" autocomplete="current-password"><small>민감 작업이므로 비밀번호로 다시 확인합니다.</small></label>
+    <button class="button" type="submit">송금</button>
+  </form>
+</section>
+<section><h2>최근 거래</h2><div class="table-wrap"><table><thead><tr><th>구분</th><th>상대방</th><th>금액</th><th>일시</th></tr></thead><tbody>
+  {% for transfer in transfers %}
+  <tr><td>{{ "보냄" if transfer.sender_id == g.user.id else "받음" }}</td><td>{{ transfer.recipient.username if transfer.sender_id == g.user.id else transfer.sender.username }}</td><td>{{ "{:,}".format(transfer.amount) }} P</td><td>{{ transfer.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+  {% else %}<tr><td colspan="4">거래 내역이 없습니다.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}
+

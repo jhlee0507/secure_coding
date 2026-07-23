@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}메시지{% endblock %}
+{% block content %}
+<div class="section-heading"><div><p class="eyebrow">PRIVATE MESSAGES</p><h1>메시지</h1></div></div>
+<div class="two-column">
+  <section class="panel"><h2>최근 대화</h2>
+    {% for user in partners %}<a class="list-link" href="{{ url_for('messages.conversation', user_id=user.id) }}">{{ user.username }}</a>{% else %}<p class="muted">아직 대화가 없습니다.</p>{% endfor %}
+  </section>
+  <section class="panel"><h2>사용자 찾기</h2>
+    {% for user in users %}<a class="list-link" href="{{ url_for('messages.conversation', user_id=user.id) }}">{{ user.username }}</a>{% else %}<p class="muted">대화 가능한 사용자가 없습니다.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}
+

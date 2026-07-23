@@ -1,0 +1,13 @@
+{% if products %}
+<div class="product-grid">
+  {% for product in products %}
+  <article class="product-card">
+    <p class="eyebrow">{{ "판매 완료" if product.is_sold else "판매 중" }}</p>
+    <h3><a href="{{ url_for('products.detail', product_id=product.id) }}">{{ product.title }}</a></h3>
+    <p class="clamp">{{ product.description }}</p>
+    <div class="card-meta"><strong>{{ "{:,}".format(product.price) }} P</strong><span>{{ product.seller.username }}</span></div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}<p class="empty-state">조건에 맞는 상품이 없습니다.</p>{% endif %}
+

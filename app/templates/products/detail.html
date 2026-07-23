@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ product.title }}{% endblock %}
+{% block content %}
+<article class="detail-card">
+  <p class="eyebrow">{{ "판매 완료" if product.is_sold else "판매 중" }}</p>
+  <h1>{{ product.title }}</h1><p class="price">{{ "{:,}".format(product.price) }} P</p>
+  <p class="description">{{ product.description }}</p>
+  <p class="muted">판매자 {{ product.seller.username }} · {{ product.created_at.strftime('%Y-%m-%d') }}</p>
+  <div class="actions">
+  {% if g.user and g.user.id == product.seller_id %}
+    <a class="button" href="{{ url_for('products.edit', product_id=product.id) }}">수정</a>
+    <form method="post" action="{{ url_for('products.delete', product_id=product.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="button danger" type="submit">비공개</button></form>
+  {% elif g.user %}
+    <a class="button" href="{{ url_for('messages.conversation', user_id=product.seller_id) }}">판매자에게 메시지</a>
+    <a class="button secondary" href="{{ url_for('reports.create', target_type='product', target_id=product.id) }}">상품 신고</a>
+  {% else %}<a class="button" href="{{ url_for('auth.login') }}">로그인하고 연락하기</a>{% endif %}
+  </div>
+</article>
+{% endblock %}
+

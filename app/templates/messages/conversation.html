@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ other.username }}님과의 대화{% endblock %}
+{% block content %}
+<div class="section-heading"><div><p class="eyebrow">PRIVATE MESSAGE</p><h1>{{ other.username }}님과의 대화</h1></div><a class="button secondary" href="{{ url_for('reports.create', target_type='user', target_id=other.id) }}">사용자 신고</a></div>
+<section class="conversation" aria-live="polite">
+  {% for message in messages %}
+  <article class="bubble {{ 'mine' if message.sender_id == g.user.id else 'theirs' }}"><strong>{{ message.sender.username }}</strong><p>{{ message.body }}</p><time>{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</time></article>
+  {% else %}<p class="muted">첫 메시지를 보내보세요.</p>{% endfor %}
+</section>
+<form class="message-form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label class="sr-only" for="body">메시지</label><textarea id="body" name="body" required maxlength="1000" rows="3" placeholder="메시지를 입력하세요"></textarea>
+  <button class="button" type="submit">전송</button>
+</form>
+{% endblock %}
+

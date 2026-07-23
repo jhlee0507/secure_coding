@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}오류 {{ code }}{% endblock %}
+{% block content %}
+<section class="empty-state">
+  <p class="eyebrow">오류 {{ code }}</p>
+  <h1>{{ message }}</h1>
+  <a class="button" href="{{ url_for('main.index') }}">홈으로 돌아가기</a>
+</section>
+{% endblock %}
+

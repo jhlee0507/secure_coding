@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}상품 검색{% endblock %}
+{% block content %}
+<div class="section-heading"><div><p class="eyebrow">MARKET</p><h1>상품 찾기</h1></div><a class="button" href="{{ url_for('products.create') }}">상품 등록</a></div>
+<form class="search" method="get"><label class="sr-only" for="q">검색어</label><input id="q" name="q" value="{{ query }}" maxlength="100" placeholder="상품명이나 설명을 검색하세요"><button class="button" type="submit">검색</button></form>
+{% include "products/_grid.html" %}
+{% endblock %}
+

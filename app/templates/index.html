@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">안전한 중고 거래 연습 플랫폼</p>
+  <h1>좋은 물건을 다시, 안전하게.</h1>
+  <p>상품을 등록하고 대화하고 가상 포인트로 거래하세요.</p>
+  <div class="actions">
+    <a class="button" href="{{ url_for('products.list_products') }}">상품 둘러보기</a>
+    {% if not g.user %}<a class="button secondary" href="{{ url_for('auth.register') }}">시작하기</a>{% endif %}
+  </div>
+</section>
+<section>
+  <div class="section-heading"><h2>최근 상품</h2></div>
+  {% include "products/_grid.html" %}
+</section>
+{% endblock %}
+

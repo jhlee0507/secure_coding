@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ "상품 수정" if product else "상품 등록" }}{% endblock %}
+{% block content %}
+<section class="form-card"><p class="eyebrow">SELL</p><h1>{{ "상품 수정" if product else "상품 등록" }}</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>상품명<input name="title" required minlength="2" maxlength="100" value="{{ product.title if product else '' }}"></label>
+    <label>설명<textarea name="description" required minlength="5" maxlength="2000" rows="8">{{ product.description if product else '' }}</textarea></label>
+    <label>가격(가상 포인트)<input type="number" name="price" required min="1" max="1000000000" value="{{ product.price if product else '' }}"></label>
+    <button class="button" type="submit">저장</button>
+  </form>
+</section>
+{% endblock %}
+

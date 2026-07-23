@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}대시보드{% endblock %}
+{% block content %}
+<div class="section-heading">
+  <div><p class="eyebrow">안녕하세요, {{ g.user.username }}님</p><h1>내 대시보드</h1></div>
+  <a class="button" href="{{ url_for('products.create') }}">상품 등록</a>
+</div>
+<div class="stats">
+  <article><span>가상 포인트</span><strong>{{ "{:,}".format(g.user.balance) }} P</strong></article>
+  <article><span>내 상품</span><strong>{{ own_products|length }}</strong></article>
+</div>
+<section>
+  <h2>내 최근 상품</h2>
+  {% if own_products %}
+  <div class="table-wrap"><table><thead><tr><th>상품</th><th>가격</th><th>상태</th><th>관리</th></tr></thead><tbody>
+    {% for product in own_products %}
+    <tr><td><a href="{{ url_for('products.detail', product_id=product.id) }}">{{ product.title }}</a></td><td>{{ "{:,}".format(product.price) }} P</td><td>{{ "비공개" if product.is_hidden else ("판매완료" if product.is_sold else "판매중") }}</td><td>
+      <a href="{{ url_for('products.edit', product_id=product.id) }}">수정</a>
+      <form class="inline" method="post" action="{{ url_for('products.toggle_sold', product_id=product.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="link-button" type="submit">상태 변경</button></form>
+    </td></tr>
+    {% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="muted">등록한 상품이 없습니다.</p>{% endif %}
+</section>
+<section><h2>새로 올라온 상품</h2>{% include "products/_grid.html" %}</section>
+{% endblock %}
+
