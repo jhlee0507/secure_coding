@@ -87,10 +87,3 @@ python -m pytest -q
 ```
 
 보안 문제 제보 방법은 [SECURITY.md](SECURITY.md)를 확인하세요.
-
----
-
-## Contributors
-
-- [jhlee0507](https://github.com/jhlee0507)
-- Codex (OpenAI) — 코드 검토 및 구현 지원
