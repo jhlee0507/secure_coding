@@ -13,6 +13,7 @@ __pycache__/
 htmlcov/
 instance/
 dist/
+REPORT.md
 *.log
 .DS_Store
 .idea/
