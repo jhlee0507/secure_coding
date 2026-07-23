@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, flash, g, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, request, session, url_for
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -76,16 +76,45 @@ def logout():
 
 @bp.route("/profile", methods=["GET", "POST"])
 @login_required
+@limiter.limit("10 per minute", methods=["POST"])
 def profile():
     if request.method == "POST":
-        bio = clean_text(request.form.get("bio", ""), minimum=0, maximum=500)
-        if bio is None:
-            flash("자기소개는 500자 이하여야 합니다.", "error")
-        else:
+        action = request.form.get("action")
+        if action == "update_profile":
+            bio = clean_text(request.form.get("bio", ""), minimum=0, maximum=500)
+            if bio is None:
+                flash("자기소개는 500자 이하여야 합니다.", "error")
+                return render_template("auth/profile.html")
             g.user.bio = bio
             record("profile_update", "user", g.user.id)
             db.session.commit()
             flash("프로필을 수정했습니다.", "success")
             return redirect(url_for("auth.profile"))
+        elif action == "change_password":
+            current_password = request.form.get("current_password", "")
+            new_password = request.form.get("new_password", "")
+            password_confirmation = request.form.get("password_confirmation", "")
+            if not check_password_hash(g.user.password_hash, current_password):
+                flash("현재 비밀번호가 올바르지 않습니다.", "error")
+            elif new_password != password_confirmation:
+                flash("새 비밀번호 확인이 일치하지 않습니다.", "error")
+            elif not validate_password(new_password):
+                flash(
+                    "새 비밀번호는 10자 이상이며 대·소문자, 숫자, 특수문자를 포함해야 합니다.",
+                    "error",
+                )
+            elif check_password_hash(g.user.password_hash, new_password):
+                flash("현재 비밀번호와 다른 비밀번호를 사용하세요.", "error")
+            else:
+                user_id = g.user.id
+                g.user.password_hash = generate_password_hash(
+                    new_password, method="scrypt"
+                )
+                record("password_change", "user", user_id)
+                db.session.commit()
+                session.clear()
+                flash("비밀번호를 변경했습니다. 새 비밀번호로 다시 로그인하세요.", "success")
+                return redirect(url_for("auth.login"))
+        else:
+            abort(400)
     return render_template("auth/profile.html")
-

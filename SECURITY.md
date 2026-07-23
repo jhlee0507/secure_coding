@@ -17,11 +17,10 @@
 
 ## 운영 전 확인사항
 
-- 무작위 `SECRET_KEY`와 HTTPS, `COOKIE_SECURE=true`
+- `APP_ENV=production`, 무작위 `SECRET_KEY`, HTTPS, `COOKIE_SECURE=true`
 - 디버그 모드 비활성화
 - Redis 등 공유 rate-limit 저장소
 - 데이터베이스 파일의 최소 권한과 암호화된 백업
 - 리버스 프록시의 요청 크기·시간 제한
 - 의존성 취약점 점검 및 정기 업데이트
 - 감사 로그의 접근 제한과 보존 기간 설정
-

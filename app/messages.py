@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, g, jsonify, redirect, render_template, request, url_for
 from sqlalchemy import and_, or_
 
 from .audit import record
@@ -8,6 +8,22 @@ from .security import clean_text, login_required
 
 
 bp = Blueprint("messages", __name__, url_prefix="/messages")
+
+
+def _other_user_or_404(user_id: int) -> User:
+    other = db.session.get(User, user_id)
+    if other is None or other.is_banned:
+        abort(404)
+    if other.id == g.user.id:
+        abort(400)
+    return other
+
+
+def _conversation_between(other: User):
+    return or_(
+        and_(Message.sender_id == g.user.id, Message.recipient_id == other.id),
+        and_(Message.sender_id == other.id, Message.recipient_id == g.user.id),
+    )
 
 
 @bp.get("")
@@ -36,11 +52,7 @@ def inbox():
 @login_required
 @limiter.limit("30 per minute", methods=["POST"])
 def conversation(user_id: int):
-    other = db.session.get(User, user_id)
-    if other is None or other.is_banned:
-        abort(404)
-    if other.id == g.user.id:
-        abort(400)
+    other = _other_user_or_404(user_id)
 
     if request.method == "POST":
         body = clean_text(request.form.get("body", ""), minimum=1, maximum=1000)
@@ -56,12 +68,7 @@ def conversation(user_id: int):
 
     conversation_messages = db.session.scalars(
         db.select(Message)
-        .where(
-            or_(
-                and_(Message.sender_id == g.user.id, Message.recipient_id == other.id),
-                and_(Message.sender_id == other.id, Message.recipient_id == g.user.id),
-            )
-        )
+        .where(_conversation_between(other))
         .order_by(Message.created_at.asc())
         .limit(500)
     ).all()
@@ -69,3 +76,34 @@ def conversation(user_id: int):
         "messages/conversation.html", other=other, messages=conversation_messages
     )
 
+
+@bp.get("/<int:user_id>/updates")
+@login_required
+@limiter.limit("30 per minute")
+def conversation_updates(user_id: int):
+    other = _other_user_or_404(user_id)
+    try:
+        after_id = int(request.args.get("after", "0"))
+    except ValueError:
+        abort(400)
+    if after_id < 0:
+        abort(400)
+
+    new_messages = db.session.scalars(
+        db.select(Message)
+        .where(_conversation_between(other), Message.id > after_id)
+        .order_by(Message.id.asc())
+        .limit(100)
+    ).all()
+    return jsonify(
+        messages=[
+            {
+                "id": message.id,
+                "sender": message.sender.username,
+                "body": message.body,
+                "created_at": message.created_at.isoformat(),
+                "is_mine": message.sender_id == g.user.id,
+            }
+            for message in new_messages
+        ]
+    )

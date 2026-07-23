@@ -105,3 +105,43 @@ def test_user_content_is_html_escaped(client, app, make_user):
     page = client.get(f"/products/{product_id}").get_data(as_text=True)
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in page
     assert "<script>alert(1)</script>" not in page
+
+
+def test_message_updates_only_return_current_conversation(
+    client, app, make_user, login
+):
+    alice_id = make_user("alice")
+    bob_id = make_user("bob")
+    charlie_id = make_user("charlie")
+    with app.app_context():
+        db.session.add_all(
+            [
+                Message(
+                    sender_id=bob_id,
+                    recipient_id=alice_id,
+                    body="<script>안전하게 표시</script>",
+                ),
+                Message(
+                    sender_id=bob_id,
+                    recipient_id=charlie_id,
+                    body="다른 사람의 비공개 메시지",
+                ),
+            ]
+        )
+        db.session.commit()
+    login("alice")
+    response = client.get(f"/messages/{bob_id}/updates?after=0")
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert len(payload["messages"]) == 1
+    assert payload["messages"][0]["body"] == "<script>안전하게 표시</script>"
+    assert payload["messages"][0]["is_mine"] is False
+    assert "다른 사람의 비공개 메시지" not in response.get_data(as_text=True)
+
+
+def test_message_updates_validate_cursor(client, make_user, login):
+    make_user("alice")
+    bob_id = make_user("bob")
+    login("alice")
+    assert client.get(f"/messages/{bob_id}/updates?after=-1").status_code == 400
+    assert client.get(f"/messages/{bob_id}/updates?after=invalid").status_code == 400

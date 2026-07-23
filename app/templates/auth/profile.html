@@ -4,9 +4,20 @@
 <section class="form-card"><p class="eyebrow">{{ g.user.username }}</p><h1>프로필</h1>
   <form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="update_profile">
     <label>자기소개<textarea name="bio" rows="6" maxlength="500">{{ g.user.bio }}</textarea></label>
     <button class="button" type="submit">저장</button>
   </form>
 </section>
+<section class="form-card"><p class="eyebrow">SECURITY</p><h2>비밀번호 변경</h2>
+  <p class="muted">변경 후에는 현재 세션이 종료되며 새 비밀번호로 다시 로그인해야 합니다.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="change_password">
+    <label>현재 비밀번호<input type="password" name="current_password" required autocomplete="current-password"></label>
+    <label>새 비밀번호<input type="password" name="new_password" required minlength="10" maxlength="128" autocomplete="new-password"></label>
+    <label>새 비밀번호 확인<input type="password" name="password_confirmation" required minlength="10" maxlength="128" autocomplete="new-password"></label>
+    <button class="button" type="submit">비밀번호 변경</button>
+  </form>
+</section>
 {% endblock %}
-

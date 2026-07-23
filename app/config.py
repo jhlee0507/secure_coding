@@ -16,6 +16,7 @@ class Config:
     SECRET_KEY = os.environ.get(
         "SECRET_KEY", "development-only-change-this-secret-before-production"
     )
+    APP_ENV = os.environ.get("APP_ENV", "development").strip().lower()
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL", f"sqlite:///{INSTANCE_DIR / 'market.sqlite3'}"
     )
@@ -30,4 +31,3 @@ class Config:
     WTF_CSRF_TIME_LIMIT = timedelta(hours=1)
     RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
     INITIAL_DEMO_BALANCE = int(os.environ.get("INITIAL_DEMO_BALANCE", "100000"))
-

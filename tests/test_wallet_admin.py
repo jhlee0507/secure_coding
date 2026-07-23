@@ -1,5 +1,5 @@
 from app.extensions import db
-from app.models import Product, Report, Transfer, User
+from app.models import AuditLog, Product, Report, Transfer, User
 
 
 def test_atomic_transfer_updates_balances(client, app, make_user, login):
@@ -119,3 +119,60 @@ def test_wrong_password_and_insufficient_balance_do_not_transfer(client, app, ma
     with app.app_context():
         assert db.session.get(User, alice_id).balance == 100
         assert db.session.scalar(db.select(db.func.count()).select_from(Transfer)) == 0
+
+
+def test_admin_ban_hides_products_and_records_audit(
+    client, app, make_user, login
+):
+    make_user("admin", is_admin=True)
+    target_id = make_user("target")
+    with app.app_context():
+        product = Product(
+            title="차단 대상 상품",
+            description="차단 시 함께 숨겨져야 하는 상품",
+            price=1000,
+            seller_id=target_id,
+        )
+        db.session.add(product)
+        db.session.commit()
+        product_id = product.id
+    login("admin")
+    response = client.post(f"/admin/users/{target_id}/toggle-ban")
+    assert response.status_code == 302
+    with app.app_context():
+        assert db.session.get(User, target_id).is_banned is True
+        assert db.session.get(Product, product_id).is_hidden is True
+        assert db.session.scalar(
+            db.select(AuditLog).where(
+                AuditLog.action == "admin_toggle_user_ban",
+                AuditLog.target_id == target_id,
+            )
+        )
+
+
+def test_admin_can_dismiss_report_without_banning_target(
+    client, app, make_user, login
+):
+    admin_id = make_user("admin", is_admin=True)
+    reporter_id = make_user("reporter")
+    target_id = make_user("target")
+    with app.app_context():
+        report = Report(
+            reporter_id=reporter_id,
+            target_type="user",
+            target_id=target_id,
+            reason="검토 후 기각할 수 있는 신고 사유입니다",
+        )
+        db.session.add(report)
+        db.session.commit()
+        report_id = report.id
+    login("admin")
+    response = client.post(
+        f"/admin/reports/{report_id}/handle", data={"action": "dismiss"}
+    )
+    assert response.status_code == 302
+    with app.app_context():
+        report = db.session.get(Report, report_id)
+        assert report.status == "dismissed"
+        assert report.handled_by_id == admin_id
+        assert db.session.get(User, target_id).is_banned is False

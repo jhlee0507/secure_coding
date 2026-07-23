@@ -16,11 +16,14 @@ def create_app(test_config: dict | None = None) -> Flask:
     if test_config:
         app.config.update(test_config)
 
-    if (
-        app.config.get("SESSION_COOKIE_SECURE")
-        and app.config["SECRET_KEY"].startswith("development-only-")
+    secret_key = app.config.get("SECRET_KEY") or ""
+    production_mode = app.config.get("APP_ENV") == "production"
+    if (production_mode or app.config.get("SESSION_COOKIE_SECURE")) and (
+        secret_key.startswith("development-only-") or len(secret_key) < 32
     ):
-        raise RuntimeError("Set a strong SECRET_KEY before enabling secure production cookies.")
+        raise RuntimeError("Set a strong SECRET_KEY before enabling production mode.")
+    if production_mode and not app.config.get("SESSION_COOKIE_SECURE"):
+        raise RuntimeError("Set COOKIE_SECURE=true in production mode.")
 
     os.makedirs(app.instance_path, exist_ok=True)
     db.init_app(app)

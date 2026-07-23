@@ -1,5 +1,5 @@
 from app.extensions import db
-from app.models import User
+from app.models import AuditLog, User
 
 
 def test_register_hashes_password(client, app):
@@ -92,3 +92,74 @@ def test_external_next_url_is_not_used(client, make_user):
     )
     assert response.status_code == 302
     assert response.location.endswith("/dashboard")
+
+
+def test_password_change_reauthenticates_and_revokes_session(
+    client, app, make_user, login
+):
+    user_id = make_user("alice")
+    login("alice")
+    response = client.post(
+        "/auth/profile",
+        data={
+            "action": "change_password",
+            "current_password": "Valid!Pass1",
+            "new_password": "New!ValidPass2",
+            "password_confirmation": "New!ValidPass2",
+        },
+    )
+    assert response.status_code == 302
+    assert response.location.endswith("/auth/login")
+    with client.session_transaction() as session:
+        assert "user_id" not in session
+    with app.app_context():
+        user = db.session.get(User, user_id)
+        assert user.password_hash != "New!ValidPass2"
+        assert db.session.scalar(
+            db.select(AuditLog).where(AuditLog.action == "password_change")
+        )
+    assert login("alice", "Valid!Pass1").status_code == 200
+    assert login("alice", "New!ValidPass2").status_code == 302
+
+
+def test_password_change_rejects_wrong_current_password(
+    client, app, make_user, login
+):
+    user_id = make_user("alice")
+    login("alice")
+    response = client.post(
+        "/auth/profile",
+        data={
+            "action": "change_password",
+            "current_password": "Wrong!Pass1",
+            "new_password": "New!ValidPass2",
+            "password_confirmation": "New!ValidPass2",
+        },
+    )
+    assert response.status_code == 200
+    assert "현재 비밀번호가 올바르지 않습니다" in response.get_data(as_text=True)
+    with client.session_transaction() as session:
+        assert session["user_id"] == user_id
+
+
+def test_production_mode_requires_secure_cookie_and_strong_secret():
+    import pytest
+    from app import create_app
+
+    with pytest.raises(RuntimeError, match="SECRET_KEY"):
+        create_app(
+            {
+                "TESTING": True,
+                "APP_ENV": "production",
+                "SESSION_COOKIE_SECURE": True,
+            }
+        )
+    with pytest.raises(RuntimeError, match="COOKIE_SECURE"):
+        create_app(
+            {
+                "TESTING": True,
+                "APP_ENV": "production",
+                "SECRET_KEY": "a-strong-production-secret-key-value",
+                "SESSION_COOKIE_SECURE": False,
+            }
+        )
